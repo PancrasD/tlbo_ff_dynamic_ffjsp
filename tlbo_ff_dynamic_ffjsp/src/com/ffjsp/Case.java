@@ -12,8 +12,8 @@ import java.util.Map;
 
 public final class Case {
 
-	private int Ntask;// 案例包含的任务数�?
-	private int Nmachine;// 案例包含的资源数�?
+	private int Ntask;// 案例包含的任务数量
+	private int Nmachine;// 案例包含的资源数量
    
 	private List<Task> tasks = new ArrayList<>();
 	private List<Machine> resources = new ArrayList<>();
@@ -41,7 +41,7 @@ public final class Case {
 			     int id=Integer.parseInt(str[0])+lastJobFinalTaskID;
 			     taskid=id;//
 			     List<List<Integer>> processTime=new ArrayList<>();
-			     //str 第一个元素是每项工作的操作id 后面是对应于十台机器的模糊执行时�? 执行时间格式�?  3,5,7
+			     //str 第一个元素是每项工作的操作id 后面是对应于十台机器的模糊执行时间 执行时间格式为  3,5,7
 			     for(int i=1;i<str.length;i++) {
 					List<Integer> processOne=new ArrayList<>();
 					String[] process=str[i].split("/");
@@ -50,7 +50,7 @@ public final class Case {
 					}
 					processTime.add(processOne);
 				}
-			     //生成紧前任务�?
+			     //生成紧前任务集
 			     List<Integer> preIDs=new ArrayList<Integer>();
 			     for(int j=1+lastJobFinalTaskID;j<id;j++) {
 			    	 preIDs.add(j);
@@ -65,12 +65,12 @@ public final class Case {
 		for(int i=1;i<=Nmachine;i++) {
 			 resources.add(new Machine(i));
 		}
-		countsuccessor();//耗时 �?�?
+		countsuccessor();//耗时 简化
 		countSameJobID();
 	}
 	/**
-	 * 判断任务执行链表中相邻两个任务之间是否存在紧前关系约束�?? 如果task1是task2的紧前任务，则返回true
-	 * 分两种情况：1.task2没有紧前任务,返回false; 2.task2有紧前任�?: 紧前任务包含task1; 紧前任务不包含task1
+	 * 判断任务执行链表中相邻两个任务之间是否存在紧前关系约束。 如果task1是task2的紧前任务，则返回true
+	 * 分两种情况：1.task2没有紧前任务,返回false; 2.task2有紧前任务: 紧前任务包含task1; 紧前任务不包含task1
 	 * 
 	 * @param task1
 	 *            任务1
