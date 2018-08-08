@@ -20,12 +20,11 @@ public class Individual {
 	private List<List<Integer>> chromosomeHead = new ArrayList<List<Integer>>();
 	// 染色体
 	private List<List<Integer>> chromosome = new ArrayList<List<Integer>>();
-	
 	// 染色体随机数
 	private List<List<Double>> chromosomeDNA = new ArrayList<List<Double>>();	
 	// 目标函数
 	private List<Integer> obj=new ArrayList<>();
-
+    //案例
 	private Case project;
 	//采用分配资源和安排机器上执行顺序一起的方法
 	public Individual(Case project) {
@@ -38,22 +37,6 @@ public class Individual {
 		objCompute(project);
 
 	}
-
-
-/*	public Individual(Case project, String string) {
-		// TODO Auto-generated constructor stub
-		this.project = project;
-		settaskslist(project);
-		setResList(project);
-		if(string.equals("MinProcess")) {
-			decipheringMinProcess(project);
-		}
-		if(string.equals("FirstProcess")) {
-			decipheringFirstProcess(project);
-		}
-		objComputeinitial(project);
-	}*/
-
 	public Individual(List<List<Integer>> _chromosome,List<List<Integer>> chromosomeHead, Case project) {
 		// 创建个体的染色体
 		this.project = project;
@@ -61,8 +44,6 @@ public class Individual {
 		setResList(project);
 		this.chromosome = _chromosome;
 		this.chromosomeHead=chromosomeHead;
-		//this.chromosomeDNA = _chromosomemDNA;
-
 		//计算个体的目标函数值，输出计算了起停时间的任务对象list
 		objCompute(project);		
 	}
@@ -106,7 +87,6 @@ public class Individual {
 		 * machineTask key：machineID value:执行的tasklist
 		 */
 		//leftSchedule(tasks);//存在问题 不知道如何将改变映射到染色体中 不过可以返回机器上资源顺序及时间
-		
         //当前个体最后的完成时间
 		for(int i=0;i<reslist.size();i++) {
 			finishTimes.add(reslist.get(i).getFinishTime());
@@ -125,13 +105,10 @@ public class Individual {
 			//当前任务所对应的资源最晚时间
 			List<Integer> resFinish=reslist.get(chromosome.get(1).get(i)-1).getFinishTime();
 			//计算开始时间
-			
 			List<Integer> startTime=Tools.computeStartTime(resFinish,preEndtime);
 			//设置当前任务的开始时间及完成时间
 			taskslist.get(chromosome.get(0).get(i)-1).setstarttime(startTime);
-			
 			List<Integer> processTime=tasks.get(chromosome.get(0).get(i)-1).getProcessTime().get(chromosome.get(1).get(i)-1);
-			
 			List<Integer> completedTime=Tools.computeCompletedTime(startTime, processTime);
 			taskslist.get(chromosome.get(0).get(i)-1).setFinishTime(completedTime);
 			//更新当前任务资源的最后完工时间
@@ -226,12 +203,8 @@ public class Individual {
 		// 可执行任务集合
 		List<Integer> executableTaskIDS = new ArrayList<Integer>();	
 		List<Task> tasks = project.getTasks();
-        
 		List<Double> _list1 = new ArrayList<>();
 		List<Double> _list2 = new ArrayList<>();
-
-		// 具体解密细节，需要补充
-
 		// 求taskList任务执行序列和resourceList资源分配序列
 		for (int i = 0; i < project.getNtask(); i++) {  
 			
@@ -240,7 +213,6 @@ public class Individual {
 			double rand2 = Math.random();
 			_list1.add(rand1);
 			_list2.add(rand2);
-			
 			for (int k = 0; k < tasks.size(); k++) {
 				if (taskslist.get(k).pretasknum == 0){
 					executableTaskIDS.add(tasks.get(k).getTaskID());
@@ -254,7 +226,6 @@ public class Individual {
 				int currentTaskID = executableTaskIDS.get(A);
 				taskList.add(currentTaskID);
 				taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
-				
 				//处理后续任务
 				for (int k = 0; k < tasks.size(); k++) {
 					//把所有以任务j为前置任务的前置任务数减1；
@@ -262,7 +233,6 @@ public class Individual {
 						taskslist.get(k).pretasknum--;	
 					}
 				}
-				
 				// 求对应的资源分配序列resourceList
 				// 可执行该任务的资源集合
 				List<Integer> list = tasks.get(currentTaskID -1).getResourceIDs();
@@ -274,7 +244,6 @@ public class Individual {
 		this.chromosomeDNA.add(_list2);
 		this.chromosome.add(taskList);
 		this.chromosome.add(resourceList);
-
 		return ;
 	}
 	/**
@@ -297,7 +266,6 @@ public class Individual {
 		for(int m=0;m<firstExcuteTask.size();m++) {
 			int currentTaskID = firstExcuteTask.get(m);
 			taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
-			
 			//处理后续任务
 			for (int k = 0; k < tasks.size(); k++) {
 				//把所有以任务j为前置任务的前置任务数减1；
@@ -306,27 +274,19 @@ public class Individual {
 				}
 			}
 		}
-		
 		List<Integer> taskList = new ArrayList<Integer>();
 		List<Integer> resourceList = new ArrayList<Integer>();
 		// 可执行任务集合
 		List<Integer> executableTaskIDS = new ArrayList<Integer>();	
-		
-        
 		List<Double> _list1 = new ArrayList<>();
 		List<Double> _list2 = new ArrayList<>();
-        
-		// 具体解密细节，需要补充
-
 		// 求taskList任务执行序列和resourceList资源分配序列
 		for (int i = 0; i < project.getNtask(); i++) {  
-			
 			executableTaskIDS.clear();
 			double rand1 = Math.random();
 			double rand2 = Math.random();
 			_list1.add(rand1);
 			_list2.add(rand2);
-			
 			for (int k = 0; k < tasks.size(); k++) {
 				if (taskslist.get(k).pretasknum == 0){
 					executableTaskIDS.add(tasks.get(k).getTaskID());
@@ -341,7 +301,6 @@ public class Individual {
 				int currentTaskID = executableTaskIDS.get(A);
 				taskList.add(currentTaskID);
 				taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
-				
 				//处理后续任务
 				for (int k = 0; k < tasks.size(); k++) {
 					//把所有以任务j为前置任务的前置任务数减1；
@@ -363,9 +322,7 @@ public class Individual {
 					int resourceid=tasks.get(currentTaskID -1).getMinProcessTimeResource();
 					resourceList.add(resourceid );
 					//移除currentTaskID id
-					
 					List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
-					
 					taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
 					reslist.get(resourceid-1).setFinishTime(endEndTime);
 				}
@@ -380,7 +337,6 @@ public class Individual {
 					//移除currentTaskID id
 					executableTaskIDS.remove(A);
 					List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
-					
 					taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
 					reslist.get(resourceid-1).setFinishTime(endEndTime);
 				}
@@ -396,8 +352,7 @@ public class Individual {
 					//2 计算当前任务的开始执行时间 紧前集的最后完成时间 安排资源的结束时间
 					//3 更新任务的结束时间  资源的结束时间
 					List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
-				
-					taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
+				    taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
 					reslist.get(resourceid-1).setFinishTime(endEndTime);
 				}
 				
@@ -408,7 +363,6 @@ public class Individual {
 		this.chromosomeDNA.add(_list2);
 		this.chromosome.add(taskList);
 		this.chromosome.add(resourceList);
-
 		return ;
 	}
 	private void decipheringFirstProcess(Case project2) {
@@ -473,11 +427,8 @@ public class Individual {
 				//2 计算当前任务的开始执行时间 紧前集的最后完成时间 安排资源的结束时间
 				//3 更新任务的结束时间  资源的结束时间
 				List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
-			
-				taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
+			    taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
 				reslist.get(resourceid-1).setFinishTime(endEndTime);
-				
-				
 		   }
 		
 		}
@@ -485,7 +436,6 @@ public class Individual {
 		this.chromosomeDNA.add(_list2);
 		this.chromosome.add(taskList);
 		this.chromosome.add(resourceList);
-
 		return ;
 	}
 
@@ -496,12 +446,8 @@ public class Individual {
 		// 可执行任务集合
 		List<Integer> executableTaskIDS = new ArrayList<Integer>();	
 		List<Task> tasks = project.getTasks();
-        
 		List<Double> _list1 = new ArrayList<>();
 		List<Double> _list2 = new ArrayList<>();
-
-		// 具体解密细节，需要补充
-
 		// 求taskList任务执行序列和resourceList资源分配序列
 		for (int i = 0; i < project.getNtask(); i++) {  
 			
@@ -510,7 +456,6 @@ public class Individual {
 			double rand2 = Math.random();
 			_list1.add(rand1);
 			_list2.add(rand2);
-			
 			for (int k = 0; k < tasks.size(); k++) {
 				if (taskslist.get(k).pretasknum == 0){
 					executableTaskIDS.add(tasks.get(k).getTaskID());
@@ -525,7 +470,6 @@ public class Individual {
 				int currentTaskID = executableTaskIDS.get(A);
 				taskList.add(currentTaskID);
 				taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
-				
 				//处理后续任务
 				for (int k = 0; k < tasks.size(); k++) {
 					//把所有以任务j为前置任务的前置任务数减1；
@@ -546,21 +490,16 @@ public class Individual {
 				int resourceid=tasks.get(currentTaskID -1).getMinProcessTimeResource();
 				resourceList.add(resourceid );
 				//移除currentTaskID id
-				
 				List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
-				
 				taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
 				reslist.get(resourceid-1).setFinishTime(endEndTime);
-			
-	
-		   }
+			}
 		
 		}
 		this.chromosomeDNA.add(_list1);
 		this.chromosomeDNA.add(_list2);
 		this.chromosome.add(taskList);
 		this.chromosome.add(resourceList);
-
 		return ;
 	}
 	public List<ITask> getTaskslist() {
@@ -593,11 +532,9 @@ public class Individual {
 	public void setProject(Case project) {
 		this.project = project;
 	}
-
 	public List<List<Integer>> getChromosomeHead() {
 		return chromosomeHead;
 	}
-
 	public void setChromosomeHead(List<List<Integer>> chromosomeHead) {
 		this.chromosomeHead = chromosomeHead;
 	}
