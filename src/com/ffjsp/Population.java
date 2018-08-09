@@ -47,7 +47,7 @@ public  class Population {
 		}
 		return populationObj;
 	}
-	/////NSFFA/////////////////////////////////////////////////////////////////////////
+	
 	/*
 	 * 使用果蝇优化算法获得下一代种群
 	 * @param project 创建的案例

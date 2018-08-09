@@ -89,7 +89,7 @@ public class Dynamic_ffjsp {
 		   ps = new PrintStream(fos);
 		   System.setOut(ps);
 		   //
-		   //Tools.printConvrece(result);			   
+		   Tools.printConvrece(result);			   
 		 } catch (IOException e) {
 			e.printStackTrace();
 		 }  finally {
