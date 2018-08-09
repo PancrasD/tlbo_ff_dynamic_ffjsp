@@ -298,7 +298,7 @@ public class Individual {
 				break;
 			}
 			//循环安排当前能执行的任务  可换成两种规则
-			//1随机  2最大执行时间  3最大紧后集 4 最大紧后集执行时间和
+			//1随机  2最大紧后集   34先选择资源然后选择任务3最大执行时间 4 最大紧后集执行时间和
 			double rand3=Math.random();
 			if(rand3<0.5) {
 			   scheduleTaskByRandomRule(rand1,rand2,executableTaskIDS,taskList,resourceList);
@@ -359,10 +359,14 @@ public class Individual {
 	   }
 		
 	}
-	//最大执行时间规则调度任务
+	//最大执行时间规则调度任务 先选择资源 最早结束的资源  随机资源  然后优先规则调度任务
 	private void scheduleTaskByMaxProcessTimeRule(List<Integer> executableTaskIDS, List<Integer> taskList,
 			 List<Integer> resourceList) {
-		// TODO Auto-generated method stub
+		double rand=Math.random();
+		int minResId=1;
+		for(int i=0;i<this.getReslist().size();i++) {
+			
+		}
 		
 	}
 	//最多紧后集规则调度任务
