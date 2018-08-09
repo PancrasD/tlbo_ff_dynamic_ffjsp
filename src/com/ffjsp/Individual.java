@@ -1,6 +1,8 @@
 package com.ffjsp;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -296,67 +298,17 @@ public class Individual {
 				break;
 			}
 			//循环安排当前能执行的任务  可换成两种规则
-			for(int m=0;m<executableTaskIDS.size();m++) {
-				int A = (int) ( rand1 * executableTaskIDS.size());
-				int currentTaskID = executableTaskIDS.get(A);
-				taskList.add(currentTaskID);
-				taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
-				//处理后续任务
-				for (int k = 0; k < tasks.size(); k++) {
-					//把所有以任务j为前置任务的前置任务数减1；
-					if (tasks.get(k).getPresecessorIDs().contains(currentTaskID)){
-						taskslist.get(k).pretasknum--;	
-					}
-				}
-				Task curtask = tasks.get(currentTaskID-1);
-				// 求对应的资源分配序列resourceList
-				// 可执行该任务的资源集合
-				Random rand=new Random();
-				double prob=rand.nextDouble();
-				//到底是整个初始化采用统一的规则 还是多种规则组合使用
-				if(prob<=0.5) {
-					/*
-					 * 采取选择最小执行时间的资源
-					 */
-					executableTaskIDS.remove(A);
-					int resourceid=tasks.get(currentTaskID -1).getMinProcessTimeResource();
-					resourceList.add(resourceid );
-					//移除currentTaskID id
-					List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
-					taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
-					reslist.get(resourceid-1).setFinishTime(endEndTime);
-				}
-				else if(prob<0.6){
-					/*
-					 * 随机选取可执行的资源
-					 */
-					List<Integer> list = tasks.get(currentTaskID -1).getResourceIDs();
-					int B = (int) (rand2 * list.size());
-					int resourceid = list.get(B);
-					resourceList.add(resourceid );
-					//移除currentTaskID id
-					executableTaskIDS.remove(A);
-					List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
-					taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
-					reslist.get(resourceid-1).setFinishTime(endEndTime);
-				}
-				else{
-					/*
-					 * 选取当前任务的完成时间最小的机器  需要设置任务的开始时间 机器的完成时间
-					 */
-					executableTaskIDS.remove(A);
-					//1选择出最小完成任务时间的资源
-					//传入参数reslist获取结束时间   任务ID获取可行资源的执行时间
-					int resourceid=Tools.minCompletedTimeResource(reslist,curtask);
-					resourceList.add(resourceid );
-					//2 计算当前任务的开始执行时间 紧前集的最后完成时间 安排资源的结束时间
-					//3 更新任务的结束时间  资源的结束时间
-					List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
-				    taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
-					reslist.get(resourceid-1).setFinishTime(endEndTime);
-				}
-				
-		   }
+			//1随机  2最大执行时间  3最大紧后集 4 最大紧后集执行时间和
+			double rand3=Math.random();
+			if(rand3<0.5) {
+			   scheduleTaskByRandomRule(rand1,rand2,executableTaskIDS,taskList,resourceList);
+			}else if(rand3<1) {
+				scheduleTaskByMaxSuccessorsRule(rand2,executableTaskIDS,taskList,resourceList);
+			}else if(rand3>1) {
+				scheduleTaskByMaxProcessTimeRule(executableTaskIDS,taskList,resourceList);
+			}else {
+				scheduleTaskByMaxSumSuccessorsProcessTimeRule(executableTaskIDS,taskList,resourceList);
+			}
 		
 		}
 		this.chromosomeDNA.add(_list1);
@@ -365,6 +317,162 @@ public class Individual {
 		this.chromosome.add(resourceList);
 		return ;
 	}
+	//随机规则选择任务
+	private void scheduleTaskByRandomRule(double rand1, double rand2, List<Integer> executableTaskIDS, List<Integer> taskList,
+			List<Integer> resourceList) {
+		List<Task> tasks=this.getProject().getTasks();
+		while(executableTaskIDS.size()>0) {
+			int A = (int) ( rand1 * executableTaskIDS.size());
+			int currentTaskID = executableTaskIDS.get(A);
+			executableTaskIDS.remove(A);
+			taskList.add(currentTaskID);
+			taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
+			//处理后续任务
+			for (int k = 0; k < tasks.size(); k++) {
+				//把所有以任务j为前置任务的前置任务数减1；
+				if (tasks.get(k).getPresecessorIDs().contains(currentTaskID)){
+					taskslist.get(k).pretasknum--;	
+				}
+			}
+			//Task curtask = tasks.get(currentTaskID-1);
+			// 求对应的资源分配序列resourceList
+			// 可执行该任务的资源集合
+			Random rand=new Random();
+			double prob=rand.nextDouble();
+			//到底是整个初始化采用统一的规则 还是多种规则组合使用
+			if(prob<=0.5) {
+				// 采取选择最小执行时间的资源
+				selectResWithMinProcessTimeRule(currentTaskID,resourceList);
+			}
+			else if(prob<0.6){
+				//随机选取可执行的资源
+				selectResWithRandomRule(rand2,currentTaskID,resourceList);
+			}
+			else{
+				//选取当前任务的完成时间最小的机器  需要设置任务的开始时间 机器的完成时间
+				//1选择出最小完成任务时间的资源
+				//传入参数reslist获取结束时间   任务ID获取可行资源的执行时间
+				selectResWithFirstFinish(currentTaskID,resourceList);
+				
+			}
+			
+	   }
+		
+	}
+	//最大执行时间规则调度任务
+	private void scheduleTaskByMaxProcessTimeRule(List<Integer> executableTaskIDS, List<Integer> taskList,
+			 List<Integer> resourceList) {
+		// TODO Auto-generated method stub
+		
+	}
+	//最多紧后集规则调度任务
+	private void scheduleTaskByMaxSuccessorsRule(double rand2, List<Integer> executableTaskIDS, List<Integer> taskList,
+			List<Integer> resourceList) {
+		List<Task> tasks=this.getProject().getTasks();
+		//按降序排列
+		Collections.sort(executableTaskIDS, new Comparator<Integer>() {
+			@Override
+			public int compare(Integer o1, Integer o2) {
+				int flag=1;
+				if(tasks.get(o1-1).getSuccessorTaskIDS().size()<tasks.get(o2-1).getSuccessorTaskIDS().size()) {
+					flag=1;
+				}else if(tasks.get(o1-1).getSuccessorTaskIDS().size()>tasks.get(o2-1).getSuccessorTaskIDS().size()){
+					flag=-1;
+				}else {
+					flag=0;
+				}
+				return flag;
+			}
+			
+		});
+		//
+		while(executableTaskIDS.size()>0) {
+			int A =0;
+			int currentTaskID = executableTaskIDS.get(A);
+			executableTaskIDS.remove(A);
+			taskList.add(currentTaskID);
+			taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
+			//处理后续任务
+			for (int k = 0; k < tasks.size(); k++) {
+				//把所有以任务j为前置任务的前置任务数减1；
+				if (tasks.get(k).getPresecessorIDs().contains(currentTaskID)){
+					taskslist.get(k).pretasknum--;	
+				}
+			}
+			//Task curtask = tasks.get(currentTaskID-1);
+			// 求对应的资源分配序列resourceList
+			// 可执行该任务的资源集合
+			Random rand=new Random();
+			double prob=rand.nextDouble();
+			//到底是整个初始化采用统一的规则 还是多种规则组合使用
+			if(prob<=0.5) {
+				// 采取选择最小执行时间的资源
+				selectResWithMinProcessTimeRule(currentTaskID,resourceList);
+			}
+			else if(prob<0.6){
+				//随机选取可执行的资源
+				selectResWithRandomRule(rand2,currentTaskID,resourceList);
+			}
+			else{
+				//选取当前任务的完成时间最小的机器  需要设置任务的开始时间 机器的完成时间
+				//1选择出最小完成任务时间的资源
+				//传入参数reslist获取结束时间   任务ID获取可行资源的执行时间
+				selectResWithFirstFinish(currentTaskID,resourceList);
+				
+			}
+			
+	   }
+	}
+	//最大紧后执行时间和优先规则调度任务
+	private void scheduleTaskByMaxSumSuccessorsProcessTimeRule(List<Integer> executableTaskIDS,
+			List<Integer> taskList,  List<Integer> resourceList) {
+		
+		
+	}
+	
+	
+	
+	//根据最小执行时间选择资源
+	private void selectResWithMinProcessTimeRule( int currentTaskID, List<Integer> resourceList) {
+		List<Task> tasks =this.getProject().getTasks();
+		Task curtask = tasks.get(currentTaskID-1);
+		int resourceid=tasks.get(currentTaskID -1).getMinProcessTimeResource();
+		resourceList.add(resourceid );
+		//移除currentTaskID id
+		List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
+		taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
+		reslist.get(resourceid-1).setFinishTime(endEndTime);
+		
+	}
+	//随机规则选择资源
+	private void selectResWithRandomRule(double rand2, int currentTaskID, List<Integer> resourceList) {
+		List<Task> tasks =this.getProject().getTasks();
+		Task curtask = tasks.get(currentTaskID-1);
+		List<Integer> list = tasks.get(currentTaskID -1).getResourceIDs();
+		int B = (int) (rand2 * list.size());
+		int resourceid = list.get(B);
+		resourceList.add(resourceid );
+		//移除currentTaskID id
+		List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
+		taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
+		reslist.get(resourceid-1).setFinishTime(endEndTime);
+		
+	}
+	//选择最早完成任务的资源
+	private void selectResWithFirstFinish(int currentTaskID, List<Integer> resourceList) {
+		List<Task> tasks =this.getProject().getTasks();
+		Task curtask = tasks.get(currentTaskID-1);
+		int resourceid=Tools.minCompletedTimeResource(reslist,curtask);
+		resourceList.add(resourceid );
+		//2 计算当前任务的开始执行时间 紧前集的最后完成时间 安排资源的结束时间
+		//3 更新任务的结束时间  资源的结束时间
+		List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
+	    taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
+		reslist.get(resourceid-1).setFinishTime(endEndTime);
+		
+	}
+
+	
 	private void decipheringFirstProcess(Case project2) {
 		// TODO Auto-generated method stub
 		List<Integer> taskList = new ArrayList<Integer>();
