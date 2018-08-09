@@ -300,11 +300,11 @@ public class Individual {
 			//循环安排当前能执行的任务  可换成两种规则
 			//1随机  2最大紧后集   34先选择资源然后选择任务3最大执行时间 4 最大紧后集执行时间和
 			double rand3=Math.random();
-			if(rand3<0.5) {
+			if(rand3<0.3) {
 			   scheduleTaskByRandomRule(rand1,rand2,executableTaskIDS,taskList,resourceList);
-			}else if(rand3<1) {
+			}else if(rand3<0.5) {
 				scheduleTaskByMaxSuccessorsRule(rand2,executableTaskIDS,taskList,resourceList);
-			}else if(rand3>1) {
+			}else if(rand3>0.7) {
 				scheduleTaskByMaxProcessTimeRule(executableTaskIDS,taskList,resourceList);
 			}else {
 				scheduleTaskByMaxSumSuccessorsProcessTimeRule(executableTaskIDS,taskList,resourceList);
@@ -359,16 +359,7 @@ public class Individual {
 	   }
 		
 	}
-	//最大执行时间规则调度任务 先选择资源 最早结束的资源  随机资源  然后优先规则调度任务
-	private void scheduleTaskByMaxProcessTimeRule(List<Integer> executableTaskIDS, List<Integer> taskList,
-			 List<Integer> resourceList) {
-		double rand=Math.random();
-		int minResId=1;
-		for(int i=0;i<this.getReslist().size();i++) {
-			
-		}
-		
-	}
+	
 	//最多紧后集规则调度任务
 	private void scheduleTaskByMaxSuccessorsRule(double rand2, List<Integer> executableTaskIDS, List<Integer> taskList,
 			List<Integer> resourceList) {
@@ -427,15 +418,133 @@ public class Individual {
 			
 	   }
 	}
+	//最大执行时间规则调度任务 先选择资源   然后优先规则调度任务
+	private void scheduleTaskByMaxProcessTimeRule(List<Integer> executableTaskIDS, List<Integer> taskList,
+			 List<Integer> resourceList) {
+		//资源选择 最早结束的资源  随机资源
+		List<Task> tasks=this.getProject().getTasks();
+		while(executableTaskIDS.size()>0) {
+			double rand=Math.random();
+			int resId=0;
+			if(rand<0.5) {
+				int minResIndex=0;
+				for(int i=1;i<this.getReslist().size();i++) {
+					List<Integer> time1=this.getReslist().get(minResIndex).getFinishTime();
+					List<Integer> time2=this.getReslist().get(i).getFinishTime();
+					int flag=Tools.compareTime(time1, time2);//tim1>time2 -1 time1<time2 1
+					if(flag==-1) {
+						minResIndex=i;
+					}
+				}
+				resId=minResIndex+1;
+			}
+			else {
+				resId=(int)Math.random()*this.getReslist().size()+1;
+				
+			}
+		//任务选择 最大执行时间规则
+		
+		int taskIndex=0;
+		for(int k=1;k<executableTaskIDS.size();k++) {
+			int taskid1=executableTaskIDS.get(taskIndex);
+			int taskid2=executableTaskIDS.get(k);
+			List<Integer> time1=tasks.get(taskid1-1).getProcessTime().get(resId-1);
+			List<Integer> time2=tasks.get(taskid2-1).getProcessTime().get(resId-1);
+			int flag=Tools.compareTime(time1, time2);//tim1>time2 -1 time1<time2 1
+			if(flag==1) {
+				taskIndex=k;
+			}
+		}
+		int currentTaskID=executableTaskIDS.get(taskIndex);
+		Task curtask=tasks.get(currentTaskID-1);
+		executableTaskIDS.remove(taskIndex);
+		taskList.add(currentTaskID);
+		taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
+		//处理后续任务
+		for (int j = 0; j <tasks.size(); j++) {
+			//把所有以任务j为前置任务的前置任务数减1；
+			if (tasks.get(j).getPresecessorIDs().contains(currentTaskID)){
+				taskslist.get(j).pretasknum--;	
+			}
+		}
+		int resourceid=resId;
+		resourceList.add(resourceid );
+		List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
+	    taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
+		reslist.get(resourceid-1).setFinishTime(endEndTime);
+		
+		}
+	}
 	//最大紧后执行时间和优先规则调度任务
 	private void scheduleTaskByMaxSumSuccessorsProcessTimeRule(List<Integer> executableTaskIDS,
 			List<Integer> taskList,  List<Integer> resourceList) {
-		
-		
+		//资源选择 最早结束的资源  随机资源
+		List<Task> tasks=this.getProject().getTasks();
+		while(executableTaskIDS.size()>0) {
+			double rand=Math.random();
+			int resId=0;
+			if(rand<0.5) {
+				int minResIndex=0;
+				for(int i=1;i<this.getReslist().size();i++) {
+					List<Integer> time1=this.getReslist().get(minResIndex).getFinishTime();
+					List<Integer> time2=this.getReslist().get(i).getFinishTime();
+					int flag=Tools.compareTime(time1, time2);//tim1>time2 -1 time1<time2 1
+					if(flag==-1) {
+						minResIndex=i;
+					}
+				}
+				resId=minResIndex+1;
+			}
+			else {
+				resId=(int)Math.random()*this.getReslist().size()+1;
+				
+			}
+		//任务选择 最大及紧后执行时间和规则
+		int taskIndex=0;
+		int taskid1=executableTaskIDS.get(taskIndex);
+		List<Integer> MaxSumTimeCurrentAndSucs=computeSumCurrAndSucs(taskid1,resId);
+		for(int k=1;k<executableTaskIDS.size();k++) {
+			int taskid2=executableTaskIDS.get(k);
+			List<Integer> SumTimeCurrentAndSucs1=computeSumCurrAndSucs(taskid2,resId);
+			int flag=Tools.compareTime(MaxSumTimeCurrentAndSucs, SumTimeCurrentAndSucs1);//tim1>time2 -1 time1<time2 1
+			if(flag==1) {
+				taskIndex=k;
+				MaxSumTimeCurrentAndSucs=SumTimeCurrentAndSucs1;
+			}
+		}
+		int currentTaskID=executableTaskIDS.get(taskIndex);
+		Task curtask=tasks.get(currentTaskID-1);
+		executableTaskIDS.remove(taskIndex);
+		taskList.add(currentTaskID);
+		taskslist.get(currentTaskID -1).pretasknum = -1;   //当前任务已经被使用，做上标记以防止下次被选用
+		//处理后续任务
+		for (int j = 0; j <tasks.size(); j++) {
+			//把所有以任务j为前置任务的前置任务数减1；
+			if (tasks.get(j).getPresecessorIDs().contains(currentTaskID)){
+				taskslist.get(j).pretasknum--;	
+			}
+		}
+		int resourceid=resId;
+		resourceList.add(resourceid );
+		List<Integer> endEndTime=Tools.computeCompletedTimeSimple(taskslist,reslist,curtask,resourceid);
+	    taskslist.get(currentTaskID-1).setFinishTime(endEndTime);
+		reslist.get(resourceid-1).setFinishTime(endEndTime); 
+		}
 	}
 	
 	
 	
+	private List<Integer> computeSumCurrAndSucs(int taskid, int resId) {
+		List<Task>tasks=this.getProject().getTasks();
+		List<Integer> suc=tasks.get(taskid-1).getSuccessorTaskIDS();
+		List<Integer> sum=new ArrayList<>(tasks.get(taskid-1).getProcessTime().get(resId-1));
+		for(int i=0;i<suc.size();i++) {
+			List<Integer> sucTime=tasks.get(suc.get(i)-1).getProcessTime().get(resId-1);
+			sum=Tools.addFuzzyTime(sucTime, sum);
+		}
+		
+		return sum;
+	}
 	//根据最小执行时间选择资源
 	private void selectResWithMinProcessTimeRule( int currentTaskID, List<Integer> resourceList) {
 		List<Task> tasks =this.getProject().getTasks();

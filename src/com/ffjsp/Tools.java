@@ -20,6 +20,17 @@ public  class Tools {
 		}
 		return completedTime;
 	}
+	public static List<Integer> addFuzzyTime(List<Integer>time1,List<Integer> time2){
+		if(time1.size()!=time2.size()) {
+			System.out.println("模糊数出错");
+		}
+		List<Integer> addfuzzyTime=new ArrayList<>();
+		for(int i=0;i<time1.size();i++) {
+			addfuzzyTime.add(time1.get(i)+time2.get(i));
+			//System.out.println("completedTime "+completedTime);
+		}
+		return addfuzzyTime;
+	}
 	/*
 	 * @param finishTime1 分配的机器的上一个任务的完成时间 x1,x2,x3
 	 * @param finishTime2 紧前任务的最大完成时间 y1,y2,y3
